@@ -1,5 +1,5 @@
 using UnityEngine;
-public enum InputKey { Jump, Attack, Dash }
+public enum InputKey { Jump, Attack, Dash, Roll}
 public interface IPlayerInput_ 
 {
     public float MoveInput {get;} //플레이어 이동 감지

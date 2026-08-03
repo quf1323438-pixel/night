@@ -24,7 +24,8 @@ public class PlayerInput_ : IPlayerInput_
         
         if (kb.kKey.wasPressedThisFrame) buffer[InputKey.Jump] = BufferFrames;
         else if (kb.jKey.wasPressedThisFrame) buffer[InputKey.Attack] = BufferFrames;
-        else if (kb.shiftKey.wasPressedThisFrame) buffer[InputKey.Dash] = BufferFrames;
+        else if (kb.lKey.wasPressedThisFrame) buffer[InputKey.Dash] = BufferFrames;
+        else if (kb.shiftKey.wasPressedThisFrame) buffer[InputKey.Roll] = BufferFrames;
 
         RunHeld = kb.shiftKey.isPressed;
         JumpHeld = kb.kKey.isPressed;
