@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using UnityEngine.UIElements;
@@ -48,6 +49,13 @@ public class Player : MonoBehaviour
 
     //방패
     public float player_dir;
+    public float shield_dir;
+    public int hp = 100;
+    public float stamina = 50f; //방패가 버틸 수 있는 내구도
+    public float guardStartTime = -999f; //가드를 올린 시각
+    public const float ParryWindow = 0.15f;  
+    //방향 전환 가능 여부 (각 상태가 제어)
+    public bool canTurn = true;
 
     //상태머신
     public IPlayer_ currentState;
@@ -70,17 +78,24 @@ public class Player : MonoBehaviour
 
     void Update()
     {
+        //cast
+        isGround = Physics2D.BoxCast(transform.position, boxsize, 0f, Vector2.down, 0.1f, block);
         //update
         input_.Tick();
         currentState.Update(this);
 
+        if (currentState == new Player_Shield()) return;
+
         //dir
         if (input_.MoveInput != 0) player_dir = input_.MoveInput;
 
-
-
-        //cast
-        isGround = Physics2D.BoxCast(transform.position, boxsize, 0f, Vector2.down, 0.1f, block);
+        //방향 오브젝트 표시
+        if (input_.MoveInput != 0 && canTurn)
+        {
+            Vector3 s = transform.localScale;
+            s.x = Mathf.Abs(s.x) * player_dir;
+            transform.localScale = s;
+        }
     }
 
     void FixedUpdate()
@@ -93,5 +108,42 @@ public class Player : MonoBehaviour
         currentState.Exit(this);
         currentState = next;
         currentState.Enter(this);
+    }
+
+    public void TakeDamage(DamageInfo Dmg)
+    {
+        // 공격자가 내 왼쪽이면 -1, 오른쪽이면 +1
+        float attackSide = Mathf.Sign(Dmg.From.x - transform.position.x);
+
+        // 내가 그쪽을 보고 있으면 정면
+        bool fromFront = Mathf.Approximately(attackSide, Mathf.Sign(shield_dir));
+
+        // 못 막는 경우 → 그냥 맞음
+        if (Dmg.Unblockable || !input_.ShieldHeld || !fromFront)
+        {
+            hp -= Dmg.Amount;
+            Debug.Log($"피격!  hp = {hp}");
+            if (hp <= 0) Die();
+            return;
+        }
+
+        // 막음
+        stamina -= Dmg.Amount;
+        rb.linearVelocity = new Vector2(-attackSide * Dmg.Knockback, rb.linearVelocity.y);
+        Debug.Log($"가드!  stamina = {stamina}");
+
+        if (stamina <= 0) GuardBreak();
+    }
+
+    private void GuardBreak()
+    {
+        Debug.Log("가드 브레이크!");
+        stamina = 0f;
+        // 나중에: 경직 상태로 전환
+    }
+
+    private void Die()
+    {
+        Debug.Log("사망");
     }
 }

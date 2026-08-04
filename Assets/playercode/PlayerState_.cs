@@ -30,6 +30,13 @@ public class Player_idel : IPlayer_
             Player.input_.Consume(InputKey.Dash);
             Player.changeState(new Player_dash());
         }
+
+        //방패 들기
+        if (Player.input_.ShieldHeld && Player.isGround)
+        {
+            Player.changeState(new Player_Shield());
+            return;
+        }
     }
 
     public void FixedUpdate(Player Player)
@@ -69,6 +76,7 @@ public class Player_roll : IPlayer_
 
         //레이어 변경
         Player.gameObject.layer = Player.layer_ghost;
+        Debug.Log("roll");
     }
 
     public void Update(Player Player)
@@ -153,4 +161,39 @@ public class Player_dash : IPlayer_
     {
         Player.rb.linearVelocity = Vector2.zero;
     }
+}
+
+public class Player_Shield : IPlayer_
+{
+    public void Enter(Player Player)
+    {
+        Player.canTurn = false;      // ← 방향 고정
+        Player.rb.linearVelocity = new Vector2(0f, Player.rb.linearVelocity.y);
+        Player.shield_dir = Player.player_dir;
+        Debug.Log("방패 가동중!");
+    }
+
+    public void Update(Player Player)
+    {
+
+        //퇴장 조건 
+        if (!Player.input_.ShieldHeld)
+        {
+            Player.changeState(new Player_idel());
+            return;
+        }
+        //구르면
+        if (Player.input_.IsBuffered(InputKey.Roll) && Player.isGround)
+        {
+            Player.input_.Consume(InputKey.Roll);
+            Player.changeState(new Player_roll());
+        }
+    }
+
+    public void FixedUpdate(Player Player) 
+    {
+        Player.rb.linearVelocity = new Vector2(0f, Player.rb.linearVelocity.y);
+    }
+
+    public void Exit(Player Player) { Player.canTurn = true;}
 }
